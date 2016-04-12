@@ -17,10 +17,17 @@ public class TedInstance {
     public String[] permissions;
     public String rationaleMessage;
     public String denyMessage;
-    public boolean hasSettingBtn = true;
+    public int rationaleView;
+    public int denyView;
 
     public String deniedCloseButtonText;
+
+    public String ignoreSettings;
+
+
+
     public String rationaleConfirmText;
+    public String rationaleDenyText;
     Context context;
 
 
@@ -44,15 +51,20 @@ public class TedInstance {
         intent.putExtra(TedPermissionActivity.EXTRA_RATIONALE_MESSAGE, rationaleMessage);
         intent.putExtra(TedPermissionActivity.EXTRA_DENY_MESSAGE, denyMessage);
         intent.putExtra(TedPermissionActivity.EXTRA_PACKAGE_NAME, context.getPackageName());
-        intent.putExtra(TedPermissionActivity.EXTRA_SETTING_BUTTON, hasSettingBtn);
+
         intent.putExtra(TedPermissionActivity.EXTRA_DENIED_DIALOG_CLOSE_TEXT, deniedCloseButtonText);
         intent.putExtra(TedPermissionActivity.EXTRA_RATIONALE_CONFIRM_TEXT, rationaleConfirmText);
+        intent.putExtra(TedPermissionActivity.EXTRA_RATIONALE_DENY_TEXT, rationaleDenyText);
+
+        intent.putExtra(TedPermissionActivity.EXTRA_DENY_VIEW, rationaleView);
+        intent.putExtra(TedPermissionActivity.EXTRA_RATIONALE_VIEW, denyView);
+
+        intent.putExtra(TedPermissionActivity.EXTRA_IGNORE_SETTINGS, ignoreSettings);
+
 
 
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
-
-
     }
 
 

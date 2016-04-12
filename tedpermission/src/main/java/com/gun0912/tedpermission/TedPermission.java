@@ -2,6 +2,8 @@ package com.gun0912.tedpermission;
 
 import android.content.Context;
 import android.os.Build;
+import android.support.annotation.IdRes;
+import android.support.annotation.LayoutRes;
 import android.support.annotation.StringRes;
 
 import com.gun0912.tedpermission.util.Dlog;
@@ -74,9 +76,37 @@ public class TedPermission {
     }
 
 
-    public TedPermission setGotoSettingButton(boolean hasSettingBtn) {
+    public TedPermission setRationaleView(@LayoutRes int view) {
 
-        instance.hasSettingBtn = hasSettingBtn;
+        if (view <= 0)
+            throw new IllegalArgumentException("Invalid value for DeniedView");
+
+        instance.rationaleView = view;
+        return this;
+    }
+    public TedPermission setDenyView(@LayoutRes int view) {
+
+        if (view <= 0)
+            throw new IllegalArgumentException("Invalid value for DeniedView");
+
+        instance.denyView = view;
+        return this;
+    }
+
+
+
+
+    public TedPermission setIgnoreSettings(String rationaleConfirmText) {
+        instance.ignoreSettings = rationaleConfirmText;
+        return this;
+    }
+
+
+    public TedPermission setIgnoreSettings(@StringRes int stringRes) {
+
+        if (stringRes <= 0)
+            throw new IllegalArgumentException("Invalid value for RationaleConfirmText");
+        instance.ignoreSettings = instance.context.getString(stringRes);
         return this;
     }
 
@@ -100,6 +130,27 @@ public class TedPermission {
 
         return this;
     }
+
+
+
+    public TedPermission setRationaleDenyText(String rationaleConfirmText) {
+
+        instance.rationaleConfirmText = rationaleConfirmText;
+        return this;
+    }
+
+
+    public TedPermission setRationaleDenyText(@StringRes int stringRes) {
+
+        if (stringRes <= 0)
+            throw new IllegalArgumentException("Invalid value for RationaleConfirmText");
+
+
+        instance.rationaleDenyText = instance.context.getString(stringRes);
+
+        return this;
+    }
+
 
 
 

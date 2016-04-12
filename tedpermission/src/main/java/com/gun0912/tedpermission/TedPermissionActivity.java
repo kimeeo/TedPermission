@@ -12,6 +12,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.view.View;
 import android.view.WindowManager;
 
 import com.gun0912.tedpermission.busevent.TedBusProvider;
@@ -31,20 +32,31 @@ public class TedPermissionActivity extends AppCompatActivity {
 
     public static final String EXTRA_PERMISSIONS = "permissions";
     public static final String EXTRA_RATIONALE_MESSAGE = "rationale_message";
+    public static final String EXTRA_RATIONALE_VIEW = "rationale_view";
+
     public static final String EXTRA_DENY_MESSAGE = "deny_message";
+    public static final String EXTRA_DENY_VIEW = "deny_view";
+
     public static final String EXTRA_PACKAGE_NAME = "package_name";
-    public static final String EXTRA_SETTING_BUTTON = "setting_button";
     public static final String EXTRA_RATIONALE_CONFIRM_TEXT = "rationale_confirm_text";
+    public static final String EXTRA_IGNORE_SETTINGS= "ignore_settings";
+
+    public static final String EXTRA_RATIONALE_DENY_TEXT = "rationale_deny_text";
+
     public static final String EXTRA_DENIED_DIALOG_CLOSE_TEXT = "denied_dialog_close_text";
 
+
     String rationale_message;
+    int rationale_view;
+    int deny_view;
     String denyMessage;
     String[] permissions;
     String packageName;
-    boolean hasSettingButton;
-
     String deniedCloseButtonText;
     String rationaleConfirmText;
+    String rationaleDenyText;
+    String ignoreSettings;
+
 
 
     @Override
@@ -60,13 +72,17 @@ public class TedPermissionActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             permissions = savedInstanceState.getStringArray(EXTRA_PERMISSIONS);
             rationale_message = savedInstanceState.getString(EXTRA_RATIONALE_MESSAGE);
+            rationale_view= savedInstanceState.getInt(EXTRA_RATIONALE_VIEW,-1);
             denyMessage = savedInstanceState.getString(EXTRA_DENY_MESSAGE);
+            deny_view= savedInstanceState.getInt(EXTRA_DENY_VIEW,-1);
+
             packageName = savedInstanceState.getString(EXTRA_PACKAGE_NAME);
 
-
-            hasSettingButton = savedInstanceState.getBoolean(EXTRA_SETTING_BUTTON, true);
-
             rationaleConfirmText = savedInstanceState.getString(EXTRA_RATIONALE_CONFIRM_TEXT);
+
+            ignoreSettings= savedInstanceState.getString(EXTRA_IGNORE_SETTINGS);
+
+            rationaleDenyText= savedInstanceState.getString(EXTRA_RATIONALE_DENY_TEXT);
             deniedCloseButtonText = savedInstanceState.getString(EXTRA_DENIED_DIALOG_CLOSE_TEXT);
         } else {
 
@@ -75,9 +91,14 @@ public class TedPermissionActivity extends AppCompatActivity {
             rationale_message = intent.getStringExtra(EXTRA_RATIONALE_MESSAGE);
             denyMessage = intent.getStringExtra(EXTRA_DENY_MESSAGE);
             packageName = intent.getStringExtra(EXTRA_PACKAGE_NAME);
-            hasSettingButton = intent.getBooleanExtra(EXTRA_SETTING_BUTTON, true);
+
             rationaleConfirmText = intent.getStringExtra(EXTRA_RATIONALE_CONFIRM_TEXT);
+            ignoreSettings= intent.getStringExtra(EXTRA_IGNORE_SETTINGS);
+
+            rationaleDenyText= intent.getStringExtra(EXTRA_RATIONALE_DENY_TEXT);
             deniedCloseButtonText = intent.getStringExtra(EXTRA_DENIED_DIALOG_CLOSE_TEXT);
+            rationale_view= intent.getIntExtra(EXTRA_RATIONALE_VIEW,0);
+            deny_view= intent.getIntExtra(EXTRA_DENY_VIEW,0);
 
         }
 
@@ -90,10 +111,15 @@ public class TedPermissionActivity extends AppCompatActivity {
         outState.putString(EXTRA_RATIONALE_MESSAGE, rationale_message);
         outState.putString(EXTRA_DENY_MESSAGE, denyMessage);
         outState.putString(EXTRA_PACKAGE_NAME, packageName);
-        outState.putBoolean(EXTRA_SETTING_BUTTON, hasSettingButton);
-        outState.putString(EXTRA_SETTING_BUTTON, deniedCloseButtonText);
-        outState.putString(EXTRA_RATIONALE_CONFIRM_TEXT, rationaleConfirmText);
 
+        outState.putString(EXTRA_DENIED_DIALOG_CLOSE_TEXT, deniedCloseButtonText);
+        outState.putString(EXTRA_RATIONALE_CONFIRM_TEXT, rationaleConfirmText);
+        outState.putString(EXTRA_RATIONALE_DENY_TEXT, rationaleDenyText);
+
+        outState.putString(EXTRA_IGNORE_SETTINGS, ignoreSettings);
+
+        outState.putInt(EXTRA_RATIONALE_VIEW,rationale_view);
+        outState.putInt(EXTRA_DENY_VIEW,deny_view);
         super.onSaveInstanceState(outState);
     }
 
@@ -118,24 +144,20 @@ public class TedPermissionActivity extends AppCompatActivity {
 
 
         for (String permission : permissions) {
-
-
-
             if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 needPermissions.add(permission);
             }
-
         }
 
 
         boolean showRationale = false;
 
         for(String permission:needPermissions){
-
-            if(ActivityCompat.shouldShowRequestPermissionRationale(this,permission)){
+            if(ActivityCompat.shouldShowRequestPermissionRationale(this,permission))
+            {
                 showRationale=true;
+                break;
             }
-
         }
 
 
@@ -144,25 +166,21 @@ public class TedPermissionActivity extends AppCompatActivity {
             permissionGranted();
         }
         //From Setting Activity
-        else if (fromOnActivityResult) {
+        else if (fromOnActivityResult)
+        {
             permissionDenied(needPermissions);
         }
         //Need Show Rationale
+        else if (showRationale && rationale_view!=0) {
+            showRationaleDialog(needPermissions,rationale_view);
+        }
         else if (showRationale && !TextUtils.isEmpty(rationale_message)) {
-
             showRationaleDialog(needPermissions);
-
-
         }
         //Need Request Permissions
         else {
-
             requestPermissions(needPermissions);
-
-
         }
-
-
     }
 
     public void requestPermissions(ArrayList<String> needPermissions) {
@@ -173,8 +191,7 @@ public class TedPermissionActivity extends AppCompatActivity {
 
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                                           int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,int[] grantResults) {
         Dlog.d("");
         ArrayList<String> deniedPermissions = new ArrayList<>();
 
@@ -182,34 +199,92 @@ public class TedPermissionActivity extends AppCompatActivity {
         for (int i = 0; i < permissions.length; i++) {
             String permission = permissions[i];
             if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
-
-
                 deniedPermissions.add(permission);
-
             }
         }
-
-        if (deniedPermissions.isEmpty()) {
+        if (deniedPermissions.isEmpty())
             permissionGranted();
-        } else {
-
-
+        else if(deny_view!=0)
+            showPermissionDenyDialog(deniedPermissions,deny_view);
+        else if(!TextUtils.isEmpty(denyMessage))
             showPermissionDenyDialog(deniedPermissions);
-
-
-        }
-
-
+        else
+            permissionDenied(deniedPermissions);
     }
 
+    private void showRationaleDialog(final ArrayList<String> needPermissions,int viewID) {
+        try {
 
+            boolean viewHasPositiveButton = false;
+            boolean viewHasNegativeButton = false;
+            View view = getLayoutInflater().inflate(viewID, null);
+
+            if (view.findViewById(R.id.positiveButton) != null)
+                viewHasPositiveButton = true;
+            if (view.findViewById(R.id.negativeButton) != null)
+                viewHasNegativeButton = true;
+
+            AlertDialog.Builder b = new AlertDialog.Builder(this)
+                    .setView(view)
+                    .setCancelable(true);
+
+            if (viewHasPositiveButton == false) {
+                b.setPositiveButton(rationaleConfirmText, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        requestPermissions(needPermissions);
+                    }
+                });
+            }
+
+            if (viewHasNegativeButton == false && !TextUtils.isEmpty(rationaleDenyText)) {
+                b.setNegativeButton(rationaleDenyText, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        permissionDenied(needPermissions);
+                    }
+                });
+            }
+
+
+            final AlertDialog alertDialog = b.show();
+            alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+
+                @Override
+                public void onCancel(DialogInterface dialog) {
+                    permissionDenied(needPermissions);
+                }
+            });
+            if (view.findViewById(R.id.positiveButton) != null) {
+                view.findViewById(R.id.positiveButton).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        requestPermissions(needPermissions);
+                        alertDialog.dismiss();
+                    }
+                });
+            }
+
+            if (view.findViewById(R.id.negativeButton) != null) {
+                view.findViewById(R.id.negativeButton).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        permissionDenied(needPermissions);
+                        alertDialog.dismiss();
+                    }
+                });
+            }
+        }catch (Exception e)
+        {
+            if(!TextUtils.isEmpty(rationale_message))
+                showRationaleDialog(needPermissions);
+        }
+    }
 
     private void showRationaleDialog(final ArrayList<String> needPermissions) {
-
         new AlertDialog.Builder(this)
                 .setMessage(rationale_message)
                 .setCancelable(false)
-
                 .setNegativeButton(rationaleConfirmText, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -218,14 +293,88 @@ public class TedPermissionActivity extends AppCompatActivity {
                     }
                 })
                 .show();
+    }
+    public void showPermissionDenyDialog(final ArrayList<String> deniedPermissions,int viewID)
+    {
+        try {
+            boolean viewHasPositiveButton = false;
+            boolean viewHasNegativeButton = false;
+            View view = getLayoutInflater().inflate(viewID, null);
+            if (view.findViewById(R.id.positiveButton) != null)
+                viewHasPositiveButton = true;
+            if (view.findViewById(R.id.negativeButton) != null)
+                viewHasNegativeButton = true;
+
+            AlertDialog.Builder b = new AlertDialog.Builder(this)
+                    .setView(view)
+                    .setCancelable(true);
+
+            if(!TextUtils.isEmpty(denyMessage))
+                b.setTitle(denyMessage);
+
+            if (viewHasPositiveButton == false) {
+                b.setPositiveButton(getString(R.string.tedpermission_setting), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        gotoSettings();
+                    }
+                });
+            }
+            if (viewHasNegativeButton == false && !TextUtils.isEmpty(ignoreSettings)) {
+                b.setNegativeButton(ignoreSettings, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        permissionDenied(deniedPermissions);
+                    }
+                });
+            }
 
 
+            final AlertDialog alertDialog = b.show();
+
+            if(!TextUtils.isEmpty(denyMessage))
+                alertDialog.setTitle(denyMessage);
+
+            alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+
+                @Override
+                public void onCancel(DialogInterface dialog) {
+                    permissionDenied(deniedPermissions);
+                }
+            });
+
+
+            if (view.findViewById(R.id.positiveButton) != null) {
+                view.findViewById(R.id.positiveButton).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        gotoSettings();
+                        alertDialog.dismiss();
+                    }
+                });
+            }
+
+            if (view.findViewById(R.id.negativeButton) != null) {
+                view.findViewById(R.id.negativeButton).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        permissionDenied(deniedPermissions);
+                        alertDialog.dismiss();
+                    }
+                });
+            }
+        }catch (Exception e)
+        {
+            if(!TextUtils.isEmpty(denyMessage))
+                showPermissionDenyDialog(deniedPermissions);
+        }
     }
 
-    public void showPermissionDenyDialog(final ArrayList<String> deniedPermissions) {
 
+
+
+    public void showPermissionDenyDialog(final ArrayList<String> deniedPermissions) {
         if (TextUtils.isEmpty(denyMessage)) {
-            // denyMessage 설정 안함
             permissionDenied(deniedPermissions);
             return;
         }
@@ -244,32 +393,29 @@ public class TedPermissionActivity extends AppCompatActivity {
                     }
                 });
 
-        if (hasSettingButton) {
-
-            builder.setPositiveButton(getString(R.string.tedpermission_setting), new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-
-                    try {
-                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                                .setData(Uri.parse("package:" + packageName));
-                        startActivityForResult(intent, REQ_CODE_REQUEST_SETTING);
-                    } catch (ActivityNotFoundException e) {
-                        e.printStackTrace();
-                        Dlog.e(e.toString());
-                        Intent intent = new Intent(Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS);
-                        startActivityForResult(intent, REQ_CODE_REQUEST_SETTING);
-                    }
-
-                }
-            });
-
-        }
-
+        builder.setPositiveButton(getString(R.string.tedpermission_setting), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                gotoSettings();
+            }
+        });
 
         builder.show();
 
     }
+
+    private void gotoSettings() {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(Uri.parse("package:" + packageName));
+            startActivityForResult(intent, REQ_CODE_REQUEST_SETTING);
+        } catch (ActivityNotFoundException e) {
+            e.printStackTrace();
+            Dlog.e(e.toString());
+            Intent intent = new Intent(Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS);
+            startActivityForResult(intent, REQ_CODE_REQUEST_SETTING);
+        }
+    }
+
 
 
     @Override

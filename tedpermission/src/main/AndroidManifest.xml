@@ -7,7 +7,7 @@
             android:name=".TedPermissionActivity"
             android:theme="@style/Theme.Transparent"
             android:launchMode="singleTask"
-            />
+            android:label=""/>
 
 
     </application>
