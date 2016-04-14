@@ -160,6 +160,13 @@ public class TedPermission {
         return this;
     }
 
+    public TedPermission setShowDeniedViewInBottomSheet(boolean value) {
+
+        instance.showDeniedViewInBottomSheet = value;
+        return this;
+    }
+
+
 
     public TedPermission setDeniedCloseButtonText(@StringRes int stringRes) {
 

@@ -41,7 +41,7 @@ public class RationaleDenyActivity extends AppCompatActivity{
                 .setPermissionListener(permissionlistener)
                 .setRationaleView(R.layout.rationale_view)
                 .setDenyView(R.layout.deny_view)
-
+                .setShowDeniedViewInBottomSheet(true)
                 //.setRationaleMessage("we need permission for read contact and find your location")
                 //.setDeniedMessage("If you reject permission,you can not use this service\n\nPlease turn on permissions at [Setting] > [Permission]")
                 .setPermissions(Manifest.permission.READ_CONTACTS, Manifest.permission.ACCESS_FINE_LOCATION)

@@ -19,6 +19,7 @@ public class TedInstance {
     public String denyMessage;
     public int rationaleView;
     public int denyView;
+    public boolean showDeniedViewInBottomSheet=true;
 
     public String deniedCloseButtonText;
 
@@ -28,6 +29,8 @@ public class TedInstance {
 
     public String rationaleConfirmText;
     public String rationaleDenyText;
+
+
     Context context;
 
 
@@ -58,8 +61,10 @@ public class TedInstance {
 
         intent.putExtra(TedPermissionActivity.EXTRA_DENY_VIEW, rationaleView);
         intent.putExtra(TedPermissionActivity.EXTRA_RATIONALE_VIEW, denyView);
+        intent.putExtra(TedPermissionActivity.EXTRA_SHOW_DENIED_VIEW_IN_BOTTOM_SHEET, showDeniedViewInBottomSheet);
 
         intent.putExtra(TedPermissionActivity.EXTRA_IGNORE_SETTINGS, ignoreSettings);
+
 
 
 

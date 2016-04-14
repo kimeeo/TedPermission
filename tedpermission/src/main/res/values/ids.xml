@@ -2,4 +2,5 @@
 <resources>
     <item name="positiveButton" type="id" />
     <item name="negativeButton" type="id" />
+    <item name="neutralButton" type="id" />
 </resources>

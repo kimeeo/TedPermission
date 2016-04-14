@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -45,6 +46,8 @@ public class TedPermissionActivity extends AppCompatActivity {
 
     public static final String EXTRA_DENIED_DIALOG_CLOSE_TEXT = "denied_dialog_close_text";
 
+    public static final String EXTRA_SHOW_DENIED_VIEW_IN_BOTTOM_SHEET = "show_denied_view_in_bottom_sheet";
+
 
     String rationale_message;
     int rationale_view;
@@ -56,12 +59,14 @@ public class TedPermissionActivity extends AppCompatActivity {
     String rationaleConfirmText;
     String rationaleDenyText;
     String ignoreSettings;
+    Boolean showDeniedViewInBottomSheet;
 
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.root_layout);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
         setupFromSavedInstanceState(savedInstanceState);
         checkPermissions(false);
@@ -84,6 +89,8 @@ public class TedPermissionActivity extends AppCompatActivity {
 
             rationaleDenyText= savedInstanceState.getString(EXTRA_RATIONALE_DENY_TEXT);
             deniedCloseButtonText = savedInstanceState.getString(EXTRA_DENIED_DIALOG_CLOSE_TEXT);
+
+            showDeniedViewInBottomSheet=savedInstanceState.getBoolean(EXTRA_SHOW_DENIED_VIEW_IN_BOTTOM_SHEET);
         } else {
 
             Intent intent = getIntent();
@@ -99,6 +106,7 @@ public class TedPermissionActivity extends AppCompatActivity {
             deniedCloseButtonText = intent.getStringExtra(EXTRA_DENIED_DIALOG_CLOSE_TEXT);
             rationale_view= intent.getIntExtra(EXTRA_RATIONALE_VIEW,0);
             deny_view= intent.getIntExtra(EXTRA_DENY_VIEW,0);
+            showDeniedViewInBottomSheet=intent.getBooleanExtra(EXTRA_SHOW_DENIED_VIEW_IN_BOTTOM_SHEET,true);
 
         }
 
@@ -120,6 +128,8 @@ public class TedPermissionActivity extends AppCompatActivity {
 
         outState.putInt(EXTRA_RATIONALE_VIEW,rationale_view);
         outState.putInt(EXTRA_DENY_VIEW,deny_view);
+        outState.putBoolean(EXTRA_SHOW_DENIED_VIEW_IN_BOTTOM_SHEET,showDeniedViewInBottomSheet);
+
         super.onSaveInstanceState(outState);
     }
 
@@ -205,7 +215,7 @@ public class TedPermissionActivity extends AppCompatActivity {
         if (deniedPermissions.isEmpty())
             permissionGranted();
         else if(deny_view!=0)
-            showPermissionDenyDialog(deniedPermissions,deny_view);
+            showPermissionDenyDialog(deniedPermissions,deny_view,showDeniedViewInBottomSheet);
         else if(!TextUtils.isEmpty(denyMessage))
             showPermissionDenyDialog(deniedPermissions);
         else
@@ -294,79 +304,138 @@ public class TedPermissionActivity extends AppCompatActivity {
                 })
                 .show();
     }
-    public void showPermissionDenyDialog(final ArrayList<String> deniedPermissions,int viewID)
+    public void showPermissionDenyDialog(final ArrayList<String> deniedPermissions,int viewID,boolean isBottomSheet)
     {
-        try {
-            boolean viewHasPositiveButton = false;
-            boolean viewHasNegativeButton = false;
-            View view = getLayoutInflater().inflate(viewID, null);
-            if (view.findViewById(R.id.positiveButton) != null)
-                viewHasPositiveButton = true;
-            if (view.findViewById(R.id.negativeButton) != null)
-                viewHasNegativeButton = true;
-
-            AlertDialog.Builder b = new AlertDialog.Builder(this)
-                    .setView(view)
-                    .setCancelable(true);
-
-            if(!TextUtils.isEmpty(denyMessage))
-                b.setTitle(denyMessage);
-
-            if (viewHasPositiveButton == false) {
-                b.setPositiveButton(getString(R.string.tedpermission_setting), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        gotoSettings();
-                    }
-                });
-            }
-            if (viewHasNegativeButton == false && !TextUtils.isEmpty(ignoreSettings)) {
-                b.setNegativeButton(ignoreSettings, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        permissionDenied(deniedPermissions);
-                    }
-                });
-            }
+        View view = getLayoutInflater().inflate(viewID, null);
 
 
-            final AlertDialog alertDialog = b.show();
 
-            if(!TextUtils.isEmpty(denyMessage))
-                alertDialog.setTitle(denyMessage);
+        if(isBottomSheet) {
+            try
+            {
+                final PermissionsBottomSheetDialogFragment bottomSheetDialogFragment = new PermissionsBottomSheetDialogFragment();
+                bottomSheetDialogFragment.setRootView(view);
+                 Handler handler = new Handler();
+                  final Runnable runnablelocal = new Runnable() {
+                     @Override
+                     public void run() {
+                         bottomSheetDialogFragment.show(getSupportFragmentManager(), bottomSheetDialogFragment.getTag());
+                     }
+                     };
+                handler.postDelayed(runnablelocal, 400);
 
-            alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-
-                @Override
-                public void onCancel(DialogInterface dialog) {
-                    permissionDenied(deniedPermissions);
+                if (view.findViewById(R.id.positiveButton) != null) {
+                    view.findViewById(R.id.positiveButton).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            gotoSettings();
+                            bottomSheetDialogFragment.dismiss();
+                        }
+                    });
                 }
-            });
 
+                if (view.findViewById(R.id.negativeButton) != null) {
+                    view.findViewById(R.id.negativeButton).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            permissionDenied(deniedPermissions);
+                            bottomSheetDialogFragment.dismiss();
+                        }
+                    });
+                }
 
-            if (view.findViewById(R.id.positiveButton) != null) {
-                view.findViewById(R.id.positiveButton).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        gotoSettings();
-                        alertDialog.dismiss();
-                    }
-                });
+                if (view.findViewById(R.id.neutralButton) != null) {
+                    view.findViewById(R.id.neutralButton).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            permissionDenied(deniedPermissions);
+                            bottomSheetDialogFragment.dismiss();
+                        }
+                    });
+                }
+
+            }
+            catch (Exception e)
+            {
+                if (!TextUtils.isEmpty(denyMessage))
+                    showPermissionDenyDialog(deniedPermissions);
             }
 
-            if (view.findViewById(R.id.negativeButton) != null) {
-                view.findViewById(R.id.negativeButton).setOnClickListener(new View.OnClickListener() {
+        }
+        else {
+            try {
+                AlertDialog.Builder b = new AlertDialog.Builder(this)
+                        .setView(view)
+                        .setCancelable(true);
+
+                boolean viewHasPositiveButton = false;
+                boolean viewHasNegativeButton = false;
+
+                if (view.findViewById(R.id.positiveButton) != null)
+                    viewHasPositiveButton = true;
+                if (view.findViewById(R.id.negativeButton) != null)
+                    viewHasNegativeButton = true;
+
+                if (!TextUtils.isEmpty(denyMessage))
+                    b.setTitle(denyMessage);
+
+                if (viewHasPositiveButton == false) {
+                    b.setPositiveButton(getString(R.string.tedpermission_setting), new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            gotoSettings();
+                        }
+                    });
+                }
+                if (viewHasNegativeButton == false && !TextUtils.isEmpty(ignoreSettings)) {
+                    b.setNegativeButton(ignoreSettings, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            permissionDenied(deniedPermissions);
+                        }
+                    });
+
+
+                }
+
+
+                final AlertDialog alertDialog = b.show();
+
+                if (!TextUtils.isEmpty(denyMessage))
+                    alertDialog.setTitle(denyMessage);
+
+                alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+
                     @Override
-                    public void onClick(View v) {
+                    public void onCancel(DialogInterface dialog) {
                         permissionDenied(deniedPermissions);
-                        alertDialog.dismiss();
                     }
                 });
+
+
+                if (view.findViewById(R.id.positiveButton) != null) {
+                    view.findViewById(R.id.positiveButton).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            gotoSettings();
+                            alertDialog.dismiss();
+                        }
+                    });
+                }
+
+                if (view.findViewById(R.id.negativeButton) != null) {
+                    view.findViewById(R.id.negativeButton).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            permissionDenied(deniedPermissions);
+                            alertDialog.dismiss();
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                if (!TextUtils.isEmpty(denyMessage))
+                    showPermissionDenyDialog(deniedPermissions);
             }
-        }catch (Exception e)
-        {
-            if(!TextUtils.isEmpty(denyMessage))
-                showPermissionDenyDialog(deniedPermissions);
         }
     }
 
