@@ -20,15 +20,11 @@ public class TedInstance {
     public int rationaleView;
     public int denyView;
     public boolean showDeniedViewInBottomSheet=true;
-
     public String deniedCloseButtonText;
-
     public String ignoreSettings;
-
-
-
     public String rationaleConfirmText;
     public String rationaleDenyText;
+    public Class<TedPermissionActivity> tedActivity=TedPermissionActivity.class;
 
 
     Context context;
@@ -48,7 +44,7 @@ public class TedInstance {
     public void checkPermissions() {
 
 
-        Intent intent = new Intent(context, TedPermissionActivity.class);
+        Intent intent = new Intent(context, tedActivity);
         intent.putExtra(TedPermissionActivity.EXTRA_PERMISSIONS, permissions);
 
         intent.putExtra(TedPermissionActivity.EXTRA_RATIONALE_MESSAGE, rationaleMessage);

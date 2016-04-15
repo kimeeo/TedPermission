@@ -150,6 +150,10 @@ public class TedPermission {
 
         return this;
     }
+    public TedPermission setTedActivity(Class<TedPermissionActivity> tedActivity) {
+        instance.tedActivity = tedActivity;
+        return this;
+    }
 
 
 
