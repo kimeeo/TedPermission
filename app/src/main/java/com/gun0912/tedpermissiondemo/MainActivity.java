@@ -5,9 +5,6 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 public class MainActivity extends AppCompatActivity {
 
 
@@ -16,12 +13,29 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
-        ButterKnife.bind(this);
+
+        View.OnClickListener clickListener = new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view) {
+                onButtonClick(view);
+            }
+        };
+        //ButterKnife.bind(this);
+        View view = findViewById(R.id.btn_nomessage);
+        view.setOnClickListener(clickListener);
+
+        view = findViewById(R.id.btn_only_deny_message);
+        view.setOnClickListener(clickListener);
+
+        view = findViewById(R.id.btn_only_rationale_message);
+        view.setOnClickListener(clickListener);
+
+        view = findViewById(R.id.btn_rationale_deny);
+        view.setOnClickListener(clickListener);
 
     }
 
-
-    @OnClick({R.id.btn_nomessage,R.id.btn_only_deny_message,R.id.btn_only_rationale_message,R.id.btn_rationale_deny})
     public void onButtonClick(View view){
 
         int id = view.getId();
@@ -51,10 +65,5 @@ public class MainActivity extends AppCompatActivity {
         if(intent!=null){
             startActivity(intent);
         }
-
-
-
     }
-
-
 }
